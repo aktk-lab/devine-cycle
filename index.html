@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カード反転テスト</title>
+<style>
+body{background:#111;color:#eee;font-family:system-ui;margin:0;padding:20px;text-align:center}
+.row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
+.card{width:90px;height:130px;border-radius:12px;border:1px solid #0006;box-shadow:0 8px 22px #0008;position:relative;transform-style:preserve-3d;transition:transform .5s}
+.card .face{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden}
+.card .back{background:linear-gradient(135deg,#233,#112);display:flex;align-items:center;justify-content:center;color:#9cf;font-weight:700}
+.card .front{background:#fff;color:#111;transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;font-size:24px}
+.card.flip{transform:rotateY(180deg)}
+</style></head>
+<body>
+<h1>カード反転テスト</h1>
+<p>カードをタップすると裏／表が反転します。</p>
+<div class="row" id="row"></div>
+<script>
+const row=document.getElementById('row');
+for(let i=1;i<=5;i++){
+  const c=document.createElement('div'); c.className='card';
+  const b=document.createElement('div'); b.className='face back'; b.textContent='DIVINE';
+  const f=document.createElement('div'); f.className='face front'; f.textContent='★'+i;
+  c.append(b,f);
+  c.addEventListener('click',()=> c.classList.toggle('flip'));
+  row.append(c);
+}
+</script>
+</body></html>
