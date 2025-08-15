@@ -1,29 +1,218 @@
 <!doctype html>
-<html lang="ja"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>カード反転テスト</title>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>神々の巡路 – The Divine Cycle Pro</title>
 <style>
-body{background:#111;color:#eee;font-family:system-ui;margin:0;padding:20px;text-align:center}
-.row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:20px}
-.card{width:90px;height:130px;border-radius:12px;border:1px solid #0006;box-shadow:0 8px 22px #0008;position:relative;transform-style:preserve-3d;transition:transform .5s}
-.card .face{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden}
-.card .back{background:linear-gradient(135deg,#233,#112);display:flex;align-items:center;justify-content:center;color:#9cf;font-weight:700}
-.card .front{background:#fff;color:#111;transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;font-size:24px}
-.card.flip{transform:rotateY(180deg)}
-</style></head>
-<body>
-<h1>カード反転テスト</h1>
-<p>カードをタップすると裏／表が反転します。</p>
-<div class="row" id="row"></div>
-<script>
-const row=document.getElementById('row');
-for(let i=1;i<=5;i++){
-  const c=document.createElement('div'); c.className='card';
-  const b=document.createElement('div'); b.className='face back'; b.textContent='DIVINE';
-  const f=document.createElement('div'); f.className='face front'; f.textContent='★'+i;
-  c.append(b,f);
-  c.addEventListener('click',()=> c.classList.toggle('flip'));
-  row.append(c);
+:root{
+  --bg:#0b0b10; --panel:#14141c; --text:#e9eaee; --sub:#a0a4aa; --edge:#ffffff22;
+  --accent:#8ab4f8; --cardW:86px; --cardH:126px;
+  --front:#fff; --frontText:#111; --backA:#1b2c5a; --backB:#0f1a38; --backC:#0b1430;
 }
+:root.gold{
+  --bg:#0e0b05; --panel:#191307; --text:#f9f3e3; --sub:#d8c9a0; --edge:#d6b66a55;
+  --accent:#ffd86b; --front:#fffaf0; --frontText:#3a2a09; --backA:#805b1e; --backB:#5e4315; --backC:#3a290e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg, rgba(0,0,0,.55), transparent);backdrop-filter:blur(6px)}
+h1{margin:10px 12px 0;font-size:1.2rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px 10px}
+.btn{border:1px solid var(--edge);background:#11131a;color:var(--text);border-radius:12px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:linear-gradient(135deg,#1a2340,#18223b)}
+select,input{font-size:16px}
+.tag{color:var(--sub)}
+.wrap{max-width:1000px;margin:6px auto 28px;padding:0 12px;display:grid;gap:12px}
+.board{background:var(--panel);border:1px solid var(--edge);border-radius:16px;padding:12px}
+.stage{position:relative;height:calc(var(--cardH)*3.8);border:1px dashed var(--edge);border-radius:14px;background:#0f1218;overflow:hidden}
+.row{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px;width:92%;justify-content:center}
+.row.top{top:12%}
+.row.bottom{top:58%}
+.slot{width:var(--cardW);height:var(--cardH);border:1px dashed var(--edge);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sub);position:relative}
+.slot .label{position:absolute;left:6px;top:-10px;font-size:.85rem;background:var(--panel);padding:0 6px;border-radius:6px;border:1px solid var(--edge)}
+.cardEl{position:absolute;left:0;top:0;width:var(--cardW);height:var(--cardH);transform-origin:center}
+.cardEl .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s ease}
+.face{position:absolute;inset:0;border-radius:12px;border:1px solid var(--edge);box-shadow:0 8px 28px rgba(0,0,0,.45);backface-visibility:hidden}
+.back{background:radial-gradient(circle at 30% 20%,var(--backA) 0,var(--backB) 45%,var(--backC) 80%);display:flex;align-items:center;justify-content:center;color:#a8c0ff;font-weight:700;letter-spacing:1px}
+.front{transform:rotateY(180deg);background:var(--front);color:var(--frontText)}
+.rank{position:absolute;left:6px;top:6px;font-weight:700}
+.suit{position:absolute;right:6px;bottom:6px;font-size:20px}
+.center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.center svg{width:52%;height:52%}
+.red{color:#c62828;fill:#c62828}.black{color:#111;fill:#111}
+.helper{color:var(--sub);font-size:.92rem;margin-top:8px}
+.out{white-space:pre-wrap;background:#0f0f14;border:1px dashed var(--edge);border-radius:14px;padding:12px;min-height:120px}
+@keyframes deal{from{transform:translate(0,0) scale(.96) rotate(-2deg);opacity:.0}to{opacity:1}}
+.deal{animation:deal .35s ease}
+.small{font-size:.88rem;color:var(--sub)}
+footer{color:var(--sub);text-align:center;margin:14px 0}
+@media (max-width:420px){ :root{--cardW:78px;--cardH:112px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>神々の巡路 – The Divine Cycle Pro</h1>
+  <div class="toolbar">
+    <button class="btn primary" id="btnDeal">シャッフルして占う</button>
+    <button class="btn" id="btnFlip">全てめくる/戻す</button>
+    <button class="btn" id="btnReset">リセット</button>
+    <label class="tag">テーマ:
+      <select id="themeSel">
+        <option value="night">夜（ダーク）</option>
+        <option value="gold">金箔（ゴールド）</option>
+      </select>
+    </label>
+    <label class="tag">音:<input type="checkbox" id="snd" checked>
+      <input type="range" id="vol" min="0" max="100" value="55"></label>
+    <label class="tag">振動:<input type="checkbox" id="vib" checked></label>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="board">
+    <div class="stage" id="stage">
+      <div class="row top" id="rowTop">
+        <div class="slot" data-pos="past"><div class="label">過去</div></div>
+        <div class="slot" data-pos="present"><div class="label">現在</div></div>
+        <div class="slot" data-pos="future"><div class="label">未来</div></div>
+      </div>
+      <div class="row bottom" id="rowBottom">
+        <div class="slot" data-pos="obstacle"><div class="label">障害</div></div>
+        <div class="slot" data-pos="advice"><div class="label">助言</div></div>
+      </div>
+    </div>
+    <div class="helper">①「シャッフルして占う」→ ② 各カードをタップで反転（長押しで意味表示）</div>
+  </div>
+
+  <div class="board">
+    <h3 style="margin:.2rem 0 .6rem">結果 / Narrative</h3>
+    <div class="out" id="out"></div>
+    <div class="small" id="status"></div>
+  </div>
+</div>
+
+<footer class="small">© Divine Cycle</footer>
+
+<script>
+/* ====== Audio / Vibration ====== */
+let audioCtx=null;
+function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } }
+function gainVal(){ const v=Number(vol.value)/100; return Math.max(0.0001, v*(snd.checked?1:0)); }
+function beep(freq=520,time=0.05,type='triangle'){ if(!audioCtx||gainVal()<=0) return;
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  o.type=type; o.frequency.value=freq; g.gain.value=gainVal(); o.connect(g).connect(audioCtx.destination); o.start();
+  setTimeout(()=>o.stop(), time*1000);
+}
+function vibe(ms=22){ if(vib.checked && navigator.vibrate) navigator.vibrate(ms); }
+
+/* ====== Data ====== */
+const SUITS=['♠','♥','♦','♣'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const PLACE={'♠':'冥界の門','♥':'聖なる泉','♦':'黄金の神殿','♣':'世界樹の枝'};
+const RANK_MYTH={'A':'天地創造の光','2':'双子神の調和','3':'三女神の徴し','4':'四方守護の基盤','5':'英雄の試練','6':'契約と調和','7':'神秘の封印','8':'輪廻と因果','9':'終末と再生','10':'祝祭と新周期','J':'案内人の導き','Q':'女神の加護','K':'大神の裁定'};
+
+function buildDeck(){
+  const d=[]; for(const s of SUITS) for(const r of RANKS) d.push({type:'card', suit:s, rank:r});
+  d.push({type:'joker', color:'R'}); d.push({type:'joker', color:'B'}); return d;
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function colorOf(s){ return (s==='♥'||s==='♦')?'red':'black'; }
+function meaning(card){
+  if(card.type==='card'){ return `${card.suit}${card.rank}：${PLACE[card.suit]}／${RANK_MYTH[card.rank]}`; }
+  return (card.color==='R')?'赤🃏：運命の女神が糸を操る':'黒🃏：トリックスターが秩序を揺らす';
+}
+
+/* ====== DOM ====== */
+const stage = document.getElementById('stage');
+const rowTop = document.getElementById('rowTop');
+const rowBottom = document.getElementById('rowBottom');
+const out = document.getElementById('out');
+const statusEl = document.getElementById('status');
+const btnDeal = document.getElementById('btnDeal');
+const btnFlip = document.getElementById('btnFlip');
+const btnReset = document.getElementById('btnReset');
+const themeSel = document.getElementById('themeSel');
+const snd = document.getElementById('snd');
+const vib = document.getElementById('vib');
+const vol = document.getElementById('vol');
+
+/* ====== Helpers ====== */
+function svgSuit(suit, cls){
+  const div=document.createElement('div');
+  div.innerHTML=`<svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="70" text-anchor="middle" font-size="80" class="${cls}">${suit}</text></svg>`;
+  return div.firstChild;
+}
+function makeCardEl(card){
+  const el=document.createElement('div'); el.className='cardEl deal';
+  const inner=document.createElement('div'); inner.className='inner';
+  const back=document.createElement('div'); back.className='face back'; back.textContent='DIVINE';
+  const front=document.createElement('div'); front.className='face front';
+
+  if(card.type==='card'){
+    const rank=document.createElement('div'); rank.className='rank '+(colorOf(card.suit)==='red'?'red':'black'); rank.textContent=card.rank;
+    const suit=document.createElement('div'); suit.className='suit '+(colorOf(card.suit)==='red'?'red':'black'); suit.textContent=card.suit;
+    const center=document.createElement('div'); center.className='center';
+    center.appendChild(svgSuit(card.suit,(colorOf(card.suit)==='red'?'red':'black')));
+    front.append(rank,suit,center);
+  }else{
+    const center=document.createElement('div'); center.className='center'; center.textContent=(card.color==='R')?'赤🃏':'黒🃏';
+    front.appendChild(center);
+  }
+
+  inner.append(back,front); el.appendChild(inner);
+  const flip = ()=>{ inner.style.transform = inner.style.transform ? '' : 'rotateY(180deg)'; beep(540,0.05,'triangle'); vibe(18); };
+  el.addEventListener('click', ()=>{ ensureAudio(); flip(); });
+  el.addEventListener('touchend', (e)=>{ e.preventDefault(); ensureAudio(); flip(); }, {passive:false});
+
+  // 長押し：意味ポップ
+  let pressTimer=null;
+  el.addEventListener('touchstart', ()=>{ pressTimer=setTimeout(()=>{ alert(meaning(card)); },420); },{passive:true});
+  el.addEventListener('touchend', ()=> clearTimeout(pressTimer), {passive:true});
+
+  return el;
+}
+function placeCard(el, slot){
+  stage.appendChild(el);
+  const sr=stage.getBoundingClientRect(), cr=slot.getBoundingClientRect();
+  el.style.transform=`translate(${cr.left-sr.left}px, ${cr.top-sr.top}px)`;
+}
+
+/* ====== Actions ====== */
+function resetBoard(){
+  [...stage.querySelectorAll('.cardEl')].forEach(e=>e.remove());
+  [...stage.querySelectorAll('.slot')].forEach(s=> s.style.visibility='visible');
+  out.textContent=''; statusEl.textContent='';
+}
+btnReset.addEventListener('click', resetBoard);
+
+btnDeal.addEventListener('click', ()=>{
+  ensureAudio();
+  resetBoard();
+  const picks = shuffle(buildDeck()).slice(0,5);
+  const slots = [...rowTop.querySelectorAll('.slot'), ...rowBottom.querySelectorAll('.slot')];
+
+  let texts=[];
+  picks.forEach((card,i)=>{
+    const el=makeCardEl(card);
+    placeCard(el, slots[i]);
+    slots[i].style.visibility='hidden';
+    texts.push(`${['過去','現在','未来','障害','助言'][i]}：${meaning(card)}`);
+  });
+  out.textContent = texts.join('\n');
+  statusEl.textContent = 'カードをタップで反転。長押しで意味のポップアップ。';
+});
+
+let flippedAll=false;
+btnFlip.addEventListener('click', ()=>{
+  flippedAll=!flippedAll;
+  stage.querySelectorAll('.cardEl .inner').forEach(i=> i.style.transform = flippedAll?'rotateY(180deg)':'');
+});
+
+/* ====== Theme ====== */
+function applyTheme(v){ document.documentElement.classList.toggle('gold', v==='gold'); }
+applyTheme(themeSel.value);
+themeSel.addEventListener('change', ()=> applyTheme(themeSel.value));
 </script>
-</body></html>
+</body>
+</html>
