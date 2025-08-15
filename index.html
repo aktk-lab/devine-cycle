@@ -1,11 +1,15 @@
-<!doctype html>
+  <!doctype html>
 <html lang="ja">
-<head><link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0b0b10">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>神々の巡路 – The Divine Cycle Pro</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0b10">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
 <style>
 :root{
   --bg:#0b0b10; --panel:#14141c; --text:#e9eaee; --sub:#a0a4aa; --edge:#ffffff22;
@@ -52,13 +56,6 @@ footer{color:var(--sub);text-align:center;margin:14px 0}
 @media (max-width:420px){ :root{--cardW:78px;--cardH:112px} }
 </style>
 </head>
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
-  });
-}
-</script>
 <body>
 <header>
   <h1>神々の巡路 – The Divine Cycle Pro</h1>
@@ -66,12 +63,21 @@ if ("serviceWorker" in navigator) {
     <button class="btn primary" id="btnDeal">シャッフルして占う</button>
     <button class="btn" id="btnFlip">全てめくる/戻す</button>
     <button class="btn" id="btnReset">リセット</button>
+
+    <label class="tag">モード:
+      <select id="spreadSel">
+        <option value="tarot5">タロット5枚（過去/現在/未来/障害/助言）</option>
+        <option value="poker3">トランプ3枚（過去/現在/未来）</option>
+      </select>
+    </label>
+
     <label class="tag">テーマ:
       <select id="themeSel">
         <option value="night">夜（ダーク）</option>
         <option value="gold">金箔（ゴールド）</option>
       </select>
     </label>
+
     <label class="tag">音:<input type="checkbox" id="snd" checked>
       <input type="range" id="vol" min="0" max="100" value="55"></label>
     <label class="tag">振動:<input type="checkbox" id="vib" checked></label>
@@ -145,6 +151,7 @@ const themeSel = document.getElementById('themeSel');
 const snd = document.getElementById('snd');
 const vib = document.getElementById('vib');
 const vol = document.getElementById('vol');
+const spreadSel = document.getElementById('spreadSel');
 
 /* ====== Helpers ====== */
 function svgSuit(suit, cls){
@@ -186,30 +193,62 @@ function placeCard(el, slot){
   const sr=stage.getBoundingClientRect(), cr=slot.getBoundingClientRect();
   el.style.transform=`translate(${cr.left-sr.left}px, ${cr.top-sr.top}px)`;
 }
-
-/* ====== Actions ====== */
 function resetBoard(){
   [...stage.querySelectorAll('.cardEl')].forEach(e=>e.remove());
   [...stage.querySelectorAll('.slot')].forEach(s=> s.style.visibility='visible');
   out.textContent=''; statusEl.textContent='';
 }
+
+/* ====== Layout / Theme ====== */
+function applySpreadLayout(kind){
+  if (kind === 'poker3') {
+    rowTop.style.display='flex';
+    rowBottom.style.display='none';
+  } else {
+    rowTop.style.display='flex';
+    rowBottom.style.display='flex';
+  }
+}
+function applyTheme(v){ document.documentElement.classList.toggle('gold', v==='gold'); }
+applyTheme(themeSel.value);
+themeSel.addEventListener('change', ()=> applyTheme(themeSel.value));
+applySpreadLayout(spreadSel.value);
+spreadSel.addEventListener('change', ()=> applySpreadLayout(spreadSel.value));
+
+/* ====== Actions ====== */
 btnReset.addEventListener('click', resetBoard);
 
 btnDeal.addEventListener('click', ()=>{
   ensureAudio();
   resetBoard();
-  const picks = shuffle(buildDeck()).slice(0,5);
-  const slots = [...rowTop.querySelectorAll('.slot'), ...rowBottom.querySelectorAll('.slot')];
+  const kind = spreadSel.value;
+  const deck = shuffle(buildDeck());
 
-  let texts=[];
-  picks.forEach((card,i)=>{
-    const el=makeCardEl(card);
-    placeCard(el, slots[i]);
-    slots[i].style.visibility='hidden';
-    texts.push(`${['過去','現在','未来','障害','助言'][i]}：${meaning(card)}`);
-  });
-  out.textContent = texts.join('\n');
-  statusEl.textContent = 'カードをタップで反転。長押しで意味のポップアップ。';
+  if (kind === 'poker3') {
+    const picks = deck.slice(0, 3);
+    const slots = [...rowTop.querySelectorAll('.slot')]; // 上段3
+    let texts = [];
+    picks.forEach((card, i) => {
+      const el = makeCardEl(card);
+      placeCard(el, slots[i]);
+      slots[i].style.visibility = 'hidden';
+      texts.push(`${['過去','現在','未来'][i]}：${meaning(card)}`);
+    });
+    out.textContent = texts.join('\n');
+    statusEl.textContent = 'トランプ3枚：カードをタップで反転。';
+  } else {
+    const picks = deck.slice(0,5);
+    const slots = [...rowTop.querySelectorAll('.slot'), ...rowBottom.querySelectorAll('.slot')];
+    let texts=[];
+    picks.forEach((card,i)=>{
+      const el=makeCardEl(card);
+      placeCard(el, slots[i]);
+      slots[i].style.visibility='hidden';
+      texts.push(`${['過去','現在','未来','障害','助言'][i]}：${meaning(card)}`);
+    });
+    out.textContent = texts.join('\n');
+    statusEl.textContent = 'タロット5枚：カードをタップで反転。長押しで意味表示。';
+  }
 });
 
 let flippedAll=false;
@@ -218,10 +257,12 @@ btnFlip.addEventListener('click', ()=>{
   stage.querySelectorAll('.cardEl .inner').forEach(i=> i.style.transform = flippedAll?'rotateY(180deg)':'');
 });
 
-/* ====== Theme ====== */
-function applyTheme(v){ document.documentElement.classList.toggle('gold', v==='gold'); }
-applyTheme(themeSel.value);
-themeSel.addEventListener('change', ()=> applyTheme(themeSel.value));
+/* ====== Service Worker 登録 ====== */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+  });
+}
 </script>
 </body>
 </html>
