@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>神々の巡路 – The Divine Cycle Pro</title>
+<title>神々の巡路 – The Divine Cycle Pro (v2)</title>
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -60,16 +60,17 @@ footer{color:var(--sub);text-align:center;margin:14px 0}
 <header>
   <h1>神々の巡路 – The Divine Cycle Pro</h1>
   <div class="toolbar">
-    <button class="btn primary" id="btnDeal">シャッフルして占う</button>
-    <button class="btn" id="btnFlip">全てめくる/戻す</button>
-    <button class="btn" id="btnReset">リセット</button>
-
-    <label class="tag">モード:
+    <!-- モードを一番左寄りにして見落とさないように -->
+    <label class="tag"><b>モード:</b>
       <select id="spreadSel">
         <option value="tarot5">タロット5枚（過去/現在/未来/障害/助言）</option>
         <option value="poker3">トランプ3枚（過去/現在/未来）</option>
       </select>
     </label>
+
+    <button class="btn primary" id="btnDeal">シャッフルして占う</button>
+    <button class="btn" id="btnFlip">全てめくる/戻す</button>
+    <button class="btn" id="btnReset">リセット</button>
 
     <label class="tag">テーマ:
       <select id="themeSel">
@@ -210,10 +211,6 @@ function applySpreadLayout(kind){
   }
 }
 function applyTheme(v){ document.documentElement.classList.toggle('gold', v==='gold'); }
-applyTheme(themeSel.value);
-themeSel.addEventListener('change', ()=> applyTheme(themeSel.value));
-applySpreadLayout(spreadSel.value);
-spreadSel.addEventListener('change', ()=> applySpreadLayout(spreadSel.value));
 
 /* ====== Actions ====== */
 btnReset.addEventListener('click', resetBoard);
@@ -257,10 +254,18 @@ btnFlip.addEventListener('click', ()=>{
   stage.querySelectorAll('.cardEl .inner').forEach(i=> i.style.transform = flippedAll?'rotateY(180deg)':'');
 });
 
-/* ====== Service Worker 登録 ====== */
+/* ====== 初期化 ====== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  applyTheme(themeSel.value);
+  applySpreadLayout(spreadSel.value);
+});
+themeSel.addEventListener('change', ()=> applyTheme(themeSel.value));
+spreadSel.addEventListener('change', ()=> applySpreadLayout(spreadSel.value));
+
+/* ====== Service Worker 登録（キャッシュ破棄用にクエリ v2） ====== */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+    navigator.serviceWorker.register("./service-worker.js?v=2").catch(console.error);
   });
 }
 </script>
