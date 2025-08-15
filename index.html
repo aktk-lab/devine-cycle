@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>神々の巡路 – The Divine Cycle Pro (v2)</title>
+<title>神々の巡路 – The Divine Cycle Pro (Lux ver.)</title>
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -11,42 +11,100 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 
 <style>
+/* ===== Theme tokens ===== */
 :root{
-  --bg:#0b0b10; --panel:#14141c; --text:#e9eaee; --sub:#a0a4aa; --edge:#ffffff22;
-  --accent:#8ab4f8; --cardW:86px; --cardH:126px;
-  --front:#fff; --frontText:#111; --backA:#1b2c5a; --backB:#0f1a38; --backC:#0b1430;
+  --bg:#0b0b10; --panel:#12141c; --text:#e9eaee; --sub:#a2a6ad; --edge:#ffffff1f;
+  --accent:#8ab4f8; --accent2:#7cf0ff;
+  --cardW:86px; --cardH:126px;
+  --front:#fff; --frontText:#121212;
+
+  /* Back design colors (Night) */
+  --back-a:#0e1737; --back-b:#0a1128; --back-c:#081021;
+  --orn:#6aa9ff;       /* ornaments */
+  --g1:#182544; --g2:#1b2d52; --g3:#0f1b38;
 }
 :root.gold{
-  --bg:#0e0b05; --panel:#191307; --text:#f9f3e3; --sub:#d8c9a0; --edge:#d6b66a55;
-  --accent:#ffd86b; --front:#fffaf0; --frontText:#3a2a09; --backA:#805b1e; --backB:#5e4315; --backC:#3a290e;
+  --bg:#0f0a04; --panel:#171108; --text:#fff6e5; --sub:#dbcaa1; --edge:#f8e5a533;
+  --accent:#ffd873; --accent2:#ffe8a6;
+  --front:#fffaf0; --frontText:#332208;
+
+  /* Back design colors (Gold) */
+  --back-a:#5a3b11; --back-b:#452d0c; --back-c:#2d1d07;
+  --orn:#ffdb7a;
+  --g1:#51380f; --g2:#69450f; --g3:#3a270a;
 }
+
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
 header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg, rgba(0,0,0,.55), transparent);backdrop-filter:blur(6px)}
 h1{margin:10px 12px 0;font-size:1.2rem}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px 10px}
-.btn{border:1px solid var(--edge);background:#11131a;color:var(--text);border-radius:12px;padding:8px 12px;cursor:pointer}
-.btn.primary{background:linear-gradient(135deg,#1a2340,#18223b)}
+.btn{border:1px solid var(--edge);background:#10131b;color:var(--text);border-radius:12px;padding:8px 12px;cursor:pointer}
+.btn.primary{background:linear-gradient(135deg,#182042,#151d38)}
 select,input{font-size:16px}
 .tag{color:var(--sub)}
 .wrap{max-width:1000px;margin:6px auto 28px;padding:0 12px;display:grid;gap:12px}
 .board{background:var(--panel);border:1px solid var(--edge);border-radius:16px;padding:12px}
-.stage{position:relative;height:calc(var(--cardH)*3.8);border:1px dashed var(--edge);border-radius:14px;background:#0f1218;overflow:hidden}
-.row{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px;width:92%;justify-content:center}
+.stage{position:relative;height:calc(var(--cardH)*3.8);border:1px dashed var(--edge);border-radius:14px;background:linear-gradient(180deg,#0d1118,#0b0e15);overflow:hidden}
+.row{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:12px;width:92%;justify-content:center}
 .row.top{top:12%}
 .row.bottom{top:58%}
-.slot{width:var(--cardW);height:var(--cardH);border:1px dashed var(--edge);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sub);position:relative}
+.slot{width:var(--cardW);height:var(--cardH);border:1px dashed var(--edge);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--sub);position:relative}
 .slot .label{position:absolute;left:6px;top:-10px;font-size:.85rem;background:var(--panel);padding:0 6px;border-radius:6px;border:1px solid var(--edge)}
-.cardEl{position:absolute;left:0;top:0;width:var(--cardW);height:var(--cardH);transform-origin:center}
-.cardEl .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s ease}
-.face{position:absolute;inset:0;border-radius:12px;border:1px solid var(--edge);box-shadow:0 8px 28px rgba(0,0,0,.45);backface-visibility:hidden}
-.back{background:radial-gradient(circle at 30% 20%,var(--backA) 0,var(--backB) 45%,var(--backC) 80%);display:flex;align-items:center;justify-content:center;color:#a8c0ff;font-weight:700;letter-spacing:1px}
-.front{transform:rotateY(180deg);background:var(--front);color:var(--frontText)}
-.rank{position:absolute;left:6px;top:6px;font-weight:700}
-.suit{position:absolute;right:6px;bottom:6px;font-size:20px}
+
+.cardEl{position:absolute;left:0;top:0;width:var(--cardW);height:var(--cardH);transform-origin:center;perspective:800px}
+.cardEl .inner{
+  position:relative;width:100%;height:100%;
+  transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.2,.7,.2,1);
+}
+.face{position:absolute;inset:0;border-radius:14px;border:1px solid var(--edge);
+  box-shadow:0 10px 30px #0008, inset 0 0 0 1px #ffffff10; backface-visibility:hidden}
+
+/* ----- Lux back (ornamented) ----- */
+.back{
+  /* deep gradient + subtle pattern */
+  background:
+    radial-gradient(120px 80px at 70% 25%, #ffffff0a, transparent 60%),
+    linear-gradient(135deg,var(--g1),var(--g2) 45%,var(--g3) 80%),
+    repeating-linear-gradient(45deg, #ffffff06 0 6px, #00000000 6px 12px);
+  display:flex;align-items:center;justify-content:center;letter-spacing:.12em;
+  color:var(--orn); font-weight:800;
+  position:relative; overflow:hidden;
+}
+/* gilded frame */
+.back::before{
+  content:""; position:absolute; inset:6px; border-radius:12px;
+  background:linear-gradient(135deg,#ffffff15,#0000), radial-gradient(120px 60px at 20% 20%, #ffffff15, #0000 60%);
+  box-shadow:inset 0 0 0 1px #ffffff1f, 0 0 0 1px #0003;
+}
+/* shine sweep on flip */
+.back::after{
+  content:""; position:absolute; inset:-20%; transform:skewX(-20deg) translateX(-140%);
+  background:linear-gradient(90deg, #ffffff00, #ffffff22 35%, #ffffff00);
+  filter:blur(1px);
+}
+.cardEl.glow .back::after{ animation:shine .7s ease .1s both }
+@keyframes shine{
+  to{ transform:skewX(-20deg) translateX(140%); }
+}
+
+/* ----- Front (rank & suit) ----- */
+.front{
+  transform:rotateY(180deg); background:var(--front); color:var(--frontText);
+  background-image:
+    radial-gradient(120px 80px at 30% 20%, #00000006, transparent 60%),
+    linear-gradient(180deg, #ffffff, #f8f8f8);
+}
+.rank{position:absolute;left:8px;top:6px;font-weight:800}
+.suit{position:absolute;right:8px;bottom:6px;font-size:22px}
 .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-.center svg{width:52%;height:52%}
+.center svg{width:54%;height:54%}
 .red{color:#c62828;fill:#c62828}.black{color:#111;fill:#111}
+
+/* Flip animation state */
+.is-flipped{ transform:rotateY(180deg) }
+
 .helper{color:var(--sub);font-size:.92rem;margin-top:8px}
 .out{white-space:pre-wrap;background:#0f0f14;border:1px dashed var(--edge);border-radius:14px;padding:12px;min-height:120px}
 @keyframes deal{from{transform:translate(0,0) scale(.96) rotate(-2deg);opacity:.0}to{opacity:1}}
@@ -60,7 +118,6 @@ footer{color:var(--sub);text-align:center;margin:14px 0}
 <header>
   <h1>神々の巡路 – The Divine Cycle Pro</h1>
   <div class="toolbar">
-    <!-- モードを一番左寄りにして見落とさないように -->
     <label class="tag"><b>モード:</b>
       <select id="spreadSel">
         <option value="tarot5">タロット5枚（過去/現在/未来/障害/助言）</option>
@@ -115,10 +172,10 @@ footer{color:var(--sub);text-align:center;margin:14px 0}
 let audioCtx=null;
 function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } }
 function gainVal(){ const v=Number(vol.value)/100; return Math.max(0.0001, v*(snd.checked?1:0)); }
-function beep(freq=520,time=0.05,type='triangle'){ if(!audioCtx||gainVal()<=0) return;
+function beep(freq=520,time=0.06,type='triangle'){ if(!audioCtx||gainVal()<=0) return;
   const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-  o.type=type; o.frequency.value=freq; g.gain.value=gainVal(); o.connect(g).connect(audioCtx.destination); o.start();
-  setTimeout(()=>o.stop(), time*1000);
+  o.type=type; o.frequency.value=freq; g.gain.value=gainVal();
+  o.connect(g).connect(audioCtx.destination); o.start(); setTimeout(()=>o.stop(), time*1000);
 }
 function vibe(ms=22){ if(vib.checked && navigator.vibrate) navigator.vibrate(ms); }
 
@@ -178,9 +235,16 @@ function makeCardEl(card){
   }
 
   inner.append(back,front); el.appendChild(inner);
-  const flip = ()=>{ inner.style.transform = inner.style.transform ? '' : 'rotateY(180deg)'; beep(540,0.05,'triangle'); vibe(18); };
-  el.addEventListener('click', ()=>{ ensureAudio(); flip(); });
-  el.addEventListener('touchend', (e)=>{ e.preventDefault(); ensureAudio(); flip(); }, {passive:false});
+
+  const flip = ()=>{
+    if(!audioCtx) ensureAudio();
+    inner.classList.toggle('is-flipped');     // 3D 回転
+    el.classList.add('glow');                 // 裏面シャイン
+    setTimeout(()=> el.classList.remove('glow'), 750);
+    beep(540,0.06,'triangle'); vibe(18);
+  };
+  el.addEventListener('click', flip);
+  el.addEventListener('touchend', (e)=>{ e.preventDefault(); flip(); }, {passive:false});
 
   // 長押し：意味ポップ
   let pressTimer=null;
@@ -202,13 +266,8 @@ function resetBoard(){
 
 /* ====== Layout / Theme ====== */
 function applySpreadLayout(kind){
-  if (kind === 'poker3') {
-    rowTop.style.display='flex';
-    rowBottom.style.display='none';
-  } else {
-    rowTop.style.display='flex';
-    rowBottom.style.display='flex';
-  }
+  if (kind === 'poker3') { rowTop.style.display='flex'; rowBottom.style.display='none'; }
+  else { rowTop.style.display='flex'; rowBottom.style.display='flex'; }
 }
 function applyTheme(v){ document.documentElement.classList.toggle('gold', v==='gold'); }
 
@@ -223,7 +282,7 @@ btnDeal.addEventListener('click', ()=>{
 
   if (kind === 'poker3') {
     const picks = deck.slice(0, 3);
-    const slots = [...rowTop.querySelectorAll('.slot')]; // 上段3
+    const slots = [...rowTop.querySelectorAll('.slot')];
     let texts = [];
     picks.forEach((card, i) => {
       const el = makeCardEl(card);
@@ -251,10 +310,10 @@ btnDeal.addEventListener('click', ()=>{
 let flippedAll=false;
 btnFlip.addEventListener('click', ()=>{
   flippedAll=!flippedAll;
-  stage.querySelectorAll('.cardEl .inner').forEach(i=> i.style.transform = flippedAll?'rotateY(180deg)':'');
+  stage.querySelectorAll('.cardEl .inner').forEach(i=> i.classList.toggle('is-flipped', flippedAll));
 });
 
-/* ====== 初期化 ====== */
+/* ====== Init ====== */
 document.addEventListener('DOMContentLoaded', ()=>{
   applyTheme(themeSel.value);
   applySpreadLayout(spreadSel.value);
@@ -262,10 +321,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
 themeSel.addEventListener('change', ()=> applyTheme(themeSel.value));
 spreadSel.addEventListener('change', ()=> applySpreadLayout(spreadSel.value));
 
-/* ====== Service Worker 登録（キャッシュ破棄用にクエリ v2） ====== */
+/* ====== SW ====== */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js?v=2").catch(console.error);
+    navigator.serviceWorker.register("./service-worker.js?v=3").catch(console.error);
   });
 }
 </script>
